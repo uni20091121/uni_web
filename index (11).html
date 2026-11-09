@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090d16">
+  <meta name="description" content="Uni_・ユニー — projects in astronomy, astrophysics, and astrophotography.">
+  <title>Uni_・ユニー</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Uni home">Uni_<span>・</span>ユニー</a>
+    <nav class="social-links" aria-label="Social and contact links">
+      <a class="social-link youtube-link" id="youtubeLink" href="#" target="_blank" rel="noopener noreferrer" hidden>YouTube <span aria-hidden="true">↗</span></a>
+      <a class="social-link" href="https://discord.gg/xHVEu7n7S" target="_blank" rel="noopener noreferrer">Discord <span aria-hidden="true">↗</span></a>
+      <a class="social-link" href="mailto:uni20091121@gmail.com">Email <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="projects-section" aria-labelledby="projectsHeading">
+      <p class="eyebrow">A collection of things I've explored</p>
+      <h1 id="projectsHeading">Projects</h1>
+
+      <div class="category-tabs" role="tablist" aria-label="Project categories">
+        <button class="category-tab" id="tab-astronomy" role="tab" aria-selected="false" aria-controls="panel-astronomy" data-category="astronomy">Astronomy</button>
+        <button class="category-tab is-active" id="tab-astrophysics" role="tab" aria-selected="true" aria-controls="panel-astrophysics" data-category="astrophysics">Astrophysics</button>
+        <button class="category-tab" id="tab-astrophotography" role="tab" aria-selected="false" aria-controls="panel-astrophotography" data-category="astrophotography">Astrophotography</button>
+      </div>
+
+      <section class="category-panel" id="panel-astronomy" role="tabpanel" aria-labelledby="tab-astronomy" hidden>
+        <div class="empty-state"><span class="empty-mark">✳</span><h2>Astronomy</h2><p>Projects coming soon.</p></div>
+      </section>
+
+      <section class="category-panel" id="panel-astrophysics" role="tabpanel" aria-labelledby="tab-astrophysics">
+        <article class="project-card">
+          <div class="project-heading">
+            <div>
+              <p class="project-index">PROJECT 01 · ASTROPHYSICS</p>
+              <h2>The Solar System's Barycenter</h2>
+            </div>
+            <span class="project-tag">Python · SPICE</span>
+          </div>
+
+          <div class="project-tabs" role="tablist" aria-label="The Solar System's Barycenter sections">
+            <button class="project-tab is-active" id="codeTab" role="tab" aria-selected="true" aria-controls="codePanel" data-project-tab="code">The Code</button>
+            <button class="project-tab" id="talkTab" role="tab" aria-selected="false" aria-controls="talkPanel" data-project-tab="talk">Uni Talk</button>
+          </div>
+
+          <section class="project-panel" id="codePanel" role="tabpanel" aria-labelledby="codeTab">
+            <div class="code-toolbar">
+              <span><span class="status-dot"></span> Python</span>
+              <button class="copy-button" id="copyCodeButton" type="button">Copy code</button>
+            </div>
+            <pre class="code-window"><code id="pythonCode">import spiceypy as spi
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import datetime as dt
+
+
+spi.furnsh("kernels/lsk/naif0012.tls") #Ephemeris Time
+spi.furnsh("kernels/pck/gm_de431.tpc") #Gravitational Parameters (μ)
+spi.furnsh('kernels/pck/pck00010.tpc') #Physical Constants
+spi.furnsh("kernels/spk/de432s.bsp") #Planetary Ephem. Data
+spi.furnsh('kernels/spk/mar099.bsp') #Mars Ephem. Data
+spi.furnsh('kernels/spk/jup347.bsp') #Jupiter Ephem. Data
+spi.furnsh('kernels/spk/sat415.bsp') #Saturn Ephem. Data
+spi.furnsh('kernels/spk/ura115.bsp') #Uranus Ephem. Data
+spi.furnsh('kernels/spk/nep095.bsp')
+
+
+init=dt.datetime(year=2026,month=1,day=1,hour=0,minute=0,second=0) #Initial date (The date / time at which the initial positions and velocities are known)
+init_et=spi.datetime2et(init) #Converted to ephemeris seconds (the no. of seconds that have passed since January 1st, 2000, 00:00:00)
+
+delta_t=365*30 #The no. of days that're going to be simulated
+
+fin=init+dt.timedelta(delta_t) #Final date
+fin_et=spi.datetime2et(fin) #Converted to ephemeris seconds
+
+time_int=np.linspace(init_et,fin_et,delta_t) #Time interval (ephemeris seconds)
+
+sol_sys_dict={'SUN':10,'MERCURY':199,'VENUS':299,'EARTH':399,
+                'MARS':499,'JUPITER':599,'SATURN':699,
+                  'URANUS':799,'NEPTUNE':899} #Dictionary that contains the SPICE IDs of the Sun and the planets
+sol_sys_mu=[] #List to store the standard gravitational parameters of the bodies in sol_sys_dict
+
+
+#For loop to populate sol_sys_mu with the standard gravitational parameters-->
+
+for id in sol_sys_dict.values():
+    mu=spi.bodvcd(id,'GM',1)[1][0]
+    sol_sys_mu.append(mu)
+
+sol_sys_mu=np.array(sol_sys_mu)
+mu_sun=sol_sys_mu[0] #Standard gravitational parameter of the Sun
+
+BARY_pos_obs=[] #List to store the barycentric positions observed using SPICE
+
+#For loop to get the positions of the barycenter wrt the Sun at each time in time_int-->
+
+for t in time_int: 
+    pos=spi.spkgps(0,t,'ECLIPJ2000',10)[0]
+    pos=pos/(spi.bodvcd(10,'RADII',3)[1][0])
+    BARY_pos_obs.append(pos)
+
+BARY_pos_obs=np.array(BARY_pos_obs)
+
+MERC_POS=[]
+VEN_POS=[]
+EARTH_POS=[]
+MARS_POS=[]
+JUP_POS=[]
+SAT_POS=[]
+URA_POS=[]
+NEP_POS=[]
+
+#For loop to perform numerical integration using Euler's Method and then append the position obtained at every step to its respective list-->
+
+for id in sol_sys_dict.values():
+    if id !=10:
+        r0=spi.spkgps(id,init_et,'ECLIPJ2000',10)[0]
+        v0=spi.spkgeo(id,init_et,'ECLIPJ2000',10)[0][3:]
+        for i in range(len(time_int)):
+            if i!=0:
+                a=-mu_sun/(spi.vnorm(r0)**3)*r0
+                dt=(time_int[i]-time_int[i-1])/1
+                v0=v0+a*dt
+                r0=r0+v0*dt
+                if id==199:
+                    MERC_POS.append(r0)
+                if id==299:
+                    VEN_POS.append(r0)
+                if id==399:
+                    EARTH_POS.append(r0)
+                if id==499:
+                    MARS_POS.append(r0)
+                if id==599:
+                    JUP_POS.append(r0)
+                if id==699:
+                    SAT_POS.append(r0)
+                if id==799:
+                    URA_POS.append(r0)
+                if id==899:
+                    NEP_POS.append(r0)
+                    
+MERC_POS=np.array(MERC_POS)
+VEN_POS=np.array(VEN_POS)
+EARTH_POS=np.array(EARTH_POS)
+MARS_POS=np.array(MARS_POS)
+JUP_POS=np.array(JUP_POS)
+SAT_POS=np.array(SAT_POS)
+URA_POS=np.array(URA_POS)
+NEP_POS=np.array(NEP_POS)
+
+#The theoretical barycentric position calculation using the formula for the centre of mass
+
+BARY_pos_theo=(MERC_POS*sol_sys_mu[1]+VEN_POS*sol_sys_mu[2]+EARTH_POS*sol_sys_mu[3]+
+                MARS_POS*sol_sys_mu[4]+JUP_POS*sol_sys_mu[5]+SAT_POS*sol_sys_mu[6]+
+                URA_POS*sol_sys_mu[7]+NEP_POS*sol_sys_mu[8])/sum(sol_sys_mu)
+
+BARY_pos_theo=BARY_pos_theo/(spi.bodvcd(10,'RADII',3)[1][0])
+
+BARY_pos_theo #>> Solar Radii
+
+#Plotting
+
+
+plt.style.use('dark_background')
+
+
+fig,ax=plt.subplots(figsize=(6,6))
+ax.set_aspect('equal')
+
+sun=plt.Circle((0,0),1,color='yellow',label='The Sun',alpha=0.5)
+ax.add_artist(sun)
+
+plt.title(f'The Movement of the Solar System Barycenter w.r.t the Sun from {init.strftime('%d/%m/%Y')} to {fin.strftime('%d/%m/%Y')}')
+
+
+plt.plot(BARY_pos_obs[:,0],BARY_pos_obs[:,1],color='cyan',label='Observed Barycenter Path')
+plt.plot(BARY_pos_theo[:,0],BARY_pos_theo[:,1],color='magenta',label='Theoretical Barycenter Path',ls='dashed')
+
+ax.set_xlim(-2,2)
+ax.set_ylim(-2,2)
+
+ax.set_xlabel("X (Solar Radii)")
+ax.set_ylabel('Y (Solar Radii)')
+
+ax.grid(True,ls='dotted')
+plt.legend()
+
+plt.show()</code></pre>
+            <p class="code-note">The code is displayed as supplied. The SPICE kernel files must be available in the expected <code>kernels/</code> folders to run it.</p>
+          </section>
+
+          <section class="project-panel talk-panel" id="talkPanel" role="tabpanel" aria-labelledby="talkTab" hidden>
+            <p class="project-index">A CLOSER LOOK</p>
+            <h3>Uni Talk</h3>
+            <p class="placeholder-copy">The explanation and discussion for this project will go here.</p>
+          </section>
+        </article>
+      </section>
+
+      <section class="category-panel" id="panel-astrophotography" role="tabpanel" aria-labelledby="tab-astrophotography" hidden>
+        <div class="empty-state"><span class="empty-mark">✳</span><h2>Astrophotography</h2><p>Projects coming soon.</p></div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer"><span>Uni_・ユニー</span><span>Curiosity, in motion.</span></footer>
+</body>
+</html>
